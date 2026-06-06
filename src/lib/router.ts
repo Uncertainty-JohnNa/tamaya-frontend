@@ -33,6 +33,7 @@ export type NavApi = {
   back: () => void;                  // pop one
   reset: (route: Route) => void;     // clear history, land on route
   current: Route;
+  night: boolean;                    // time-of-day, resolved by the shell — home tab uses it at click time
 };
 
 export const NavContext = createContext<NavApi>({
@@ -40,6 +41,7 @@ export const NavContext = createContext<NavApi>({
   back: () => undefined,
   reset: () => undefined,
   current: 'splash',
+  night: true,
 });
 
 export const useNav = () => useContext(NavContext);

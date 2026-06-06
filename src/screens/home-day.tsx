@@ -25,7 +25,7 @@ export const S06_HomeDay = () => {
   return (
   <div className="phone-inner">
     <StatusBar mode="day" time="10:42 AM" />
-    <div style={{ padding: '46px 18px 88px' }}>
+    <div className="phone-scroll" style={{ padding: '46px 18px 88px' }}>
       <div
         style={{
           display: 'flex',
@@ -45,6 +45,15 @@ export const S06_HomeDay = () => {
         <div
           style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}
         >
+          <button
+            type="button"
+            onClick={() => nav.go('settings')}
+            className="chip"
+            aria-label="설정"
+            style={{ cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            ⚙
+          </button>
           <span className="chip">Lv.{state.level}</span>
           <span className="chip dashed">🔥 {state.streak}일</span>
         </div>
@@ -173,7 +182,7 @@ export const S06_HomeDay = () => {
         ))}
       </div>
     </div>
-    <TabBar active="home" onHome={() => nav.go('home-day')} />
+    <TabBar active="home" />
   </div>
   );
 };
@@ -187,7 +196,7 @@ export const S07_HomeNight = () => {
     style={{ background: 'linear-gradient(180deg, #f5e6cf 0%, #ead0a6 70%, #d8a777 100%)' }}
   >
     <StatusBar mode="night" time="10:14 PM" />
-    <div style={{ padding: '46px 18px 88px' }}>
+    <div className="phone-scroll" style={{ padding: '46px 18px 88px' }}>
       <div
         style={{
           display: 'flex',
@@ -207,6 +216,15 @@ export const S07_HomeNight = () => {
         <div
           style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}
         >
+          <button
+            type="button"
+            onClick={() => nav.go('settings')}
+            className="chip"
+            aria-label="설정"
+            style={{ cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            ⚙
+          </button>
           <span className="chip">Lv.{state.level}</span>
           <span className="chip dashed">🔥 {state.streak}일</span>
         </div>
@@ -356,7 +374,7 @@ export const S07_HomeNight = () => {
         ))}
       </div>
     </div>
-    <TabBar active="home" onHome={() => nav.go('home-night')} />
+    <TabBar active="home" />
   </div>
   );
 };
@@ -585,7 +603,7 @@ export const S08_DailyCheck = () => {
       )}
     </div>
     {toast && <div className="toast">{toast}</div>}
-    <TabBar active="home" onHome={() => nav.go('home-day')} />
+    <TabBar active="home" />
   </div>
   );
 };
@@ -720,7 +738,7 @@ export const S09_AIChat = () => {
           →
         </button>
       </form>
-      <TabBar active="home" onHome={() => nav.go('home-day')} />
+      <TabBar active="home" />
     </div>
   );
 };

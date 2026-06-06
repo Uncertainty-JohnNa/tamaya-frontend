@@ -45,8 +45,9 @@ export const TabBar = ({
   ];
   const onTab = (k: TabKey) => {
     if (k === 'home') {
+      // Resolve day/night at click time from the shell-provided time-of-day.
       if (onHome) onHome();
-      else nav.go('home-night');
+      else nav.go(nav.night ? 'home-night' : 'home-day');
       return;
     }
     nav.go(TAB_ROUTE[k]);

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { CatSketch, ImgPh, StatusBar, TabBar } from '../components/primitives';
 import { useNav } from '../lib/router';
 
@@ -5,6 +6,11 @@ import { useNav } from '../lib/router';
 
 export const S18_CatRoom = () => {
   const nav = useNav();
+  const [toast, setToast] = useState<string | null>(null);
+  const flash = (m: string) => {
+    setToast(m);
+    setTimeout(() => setToast(null), 1400);
+  };
   return (
   <div
     className="phone-inner"
@@ -209,29 +215,31 @@ export const S18_CatRoom = () => {
       >
         {(
           [
-            ['🍖', '먹이주기', null],
-            ['👕', '옷장', 'inventory'],
-            ['◐', '놀이', null],
-            ['◰', '방꾸미기', null],
-          ] as [string, string, 'inventory' | null][]
-        ).map(([ic, t, route], i) => (
-          <div
+            ['🍖', '먹이주기', () => flash('냠냠 🐟 배부름이 올랐어요')],
+            ['👕', '옷장', () => nav.go('inventory')],
+            ['◐', '놀이', () => flash('꺄르륵! 활력이 올랐어요 ✦')],
+            ['◰', '방꾸미기', () => nav.go('inventory')],
+          ] as [string, string, () => void][]
+        ).map(([ic, t, onAct], i) => (
+          <button
             key={i}
+            type="button"
             className="hbox"
-            onClick={route ? () => nav.go(route) : undefined}
+            onClick={onAct}
             style={{
               padding: 10,
               textAlign: 'center',
               background: '#f5e6cf',
               color: '#3a2414',
-              cursor: route ? 'pointer' : 'default',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
             }}
           >
             <div style={{ fontSize: 22 }}>{ic}</div>
             <div className="tiny" style={{ marginTop: 2 }}>
               {t}
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -239,7 +247,8 @@ export const S18_CatRoom = () => {
         tip — 회고 자주 할수록 친밀도 ↑, 새 옷 잠금해제
       </div>
     </div>
-    <TabBar active="cat" onHome={() => nav.go('home-night')} />
+    {toast && <div className="toast">{toast}</div>}
+    <TabBar active="cat" />
   </div>
   );
 };
@@ -249,7 +258,7 @@ export const S19_Inventory = () => {
   return (
   <div className="phone-inner">
     <StatusBar mode="day" time="11:30 AM" />
-    <div style={{ padding: '46px 18px 88px' }}>
+    <div className="phone-scroll" style={{ padding: '46px 18px 140px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <span
           style={{ fontFamily: 'Caveat', fontSize: 22, cursor: 'pointer' }}
@@ -370,7 +379,7 @@ export const S19_Inventory = () => {
         선택 입히기
       </button>
     </div>
-    <TabBar active="cat" onHome={() => nav.go('home-night')} />
+    <TabBar active="cat" />
   </div>
   );
 };
@@ -380,7 +389,7 @@ export const S20_Report = () => {
   return (
   <div className="phone-inner">
     <StatusBar mode="day" time="9:08 AM" />
-    <div style={{ padding: '46px 18px 24px' }}>
+    <div className="phone-scroll" style={{ padding: '46px 18px 88px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <span
           style={{ fontFamily: 'Caveat', fontSize: 22, cursor: 'pointer' }}
@@ -488,6 +497,7 @@ export const S20_Report = () => {
         <span style={{ fontFamily: 'Caveat', fontSize: 22, color: '#fff' }}>›</span>
       </div>
     </div>
+    <TabBar active="ins" />
   </div>
   );
 };

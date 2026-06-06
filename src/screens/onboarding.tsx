@@ -89,7 +89,7 @@ export const S02_Welcome = () => {
   return (
   <div className="phone-inner">
     <StatusBar mode="day" time="9:24 AM" />
-    <div style={{ padding: '60px 24px 24px' }}>
+    <div className="phone-scroll" style={{ padding: '60px 24px 100px' }}>
       <div className="h-section">01 / 04 — Welcome</div>
       <div className="h-display" style={{ marginTop: 14, fontSize: 38 }}>
         혼자여도
@@ -137,7 +137,21 @@ export const S02_Welcome = () => {
     <div
       style={{ position: 'absolute', bottom: 8, left: 24, right: 24, textAlign: 'center' }}
     >
-      <div className="tiny">이미 계정이 있어요  →  로그인</div>
+      <button
+        type="button"
+        onClick={() => nav.go('login')}
+        className="tiny"
+        style={{
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          color: '#7a5634',
+          textDecoration: 'underline',
+        }}
+      >
+        이미 계정이 있어요  →  로그인
+      </button>
     </div>
   </div>
   );
@@ -148,7 +162,7 @@ export const S03_Privacy = () => {
   return (
   <div className="phone-inner">
     <StatusBar mode="day" time="9:24 AM" />
-    <div style={{ padding: '52px 24px 24px' }}>
+    <div className="phone-scroll" style={{ padding: '52px 24px 100px' }}>
       <div className="h-section">02 / 04 — 약속</div>
       <div className="h-display" style={{ marginTop: 12, fontSize: 30 }}>
         네 마음은
@@ -366,7 +380,7 @@ export const S05_FirstMeet = () => {
         <circle key={i} cx={x} cy={y} r="1.5" fill="#f5e6cf" />
       ))}
     </svg>
-    <div style={{ padding: '60px 24px 24px', position: 'relative' }}>
+    <div className="phone-scroll" style={{ padding: '60px 24px 100px' }}>
       <div className="h-section" style={{ color: '#d8a777' }}>
         04 / 04 — 첫 만남
       </div>

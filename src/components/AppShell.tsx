@@ -93,6 +93,15 @@ export const AppShell = ({ onExitToDesign }: { onExitToDesign: () => void }) => 
   const [mode, setMode] = useState<Mode>('auto');
   const current = stack[stack.length - 1];
   const night = mode === 'auto' ? isNightNow() : mode === 'night';
+  // The home screen is presentational day/night — resolve which one to render
+  // from the current time-of-day so the toolbar toggle (and the home tab) always
+  // show the matching screen, however the user arrived.
+  const displayRoute: Route =
+    current === 'home-day' || current === 'home-night'
+      ? night
+        ? 'home-night'
+        : 'home-day'
+      : current;
 
   const go = useCallback((r: Route) => setStack((s) => [...s, r]), []);
   const back = useCallback(
@@ -102,8 +111,8 @@ export const AppShell = ({ onExitToDesign }: { onExitToDesign: () => void }) => 
   const reset = useCallback((r: Route) => setStack([r]), []);
 
   const api = useMemo<NavApi>(
-    () => ({ go, back, reset, current }),
-    [go, back, reset, current],
+    () => ({ go, back, reset, current, night }),
+    [go, back, reset, current, night],
   );
 
   // Public helper for the header dropdown — jump to any screen, fresh history.
@@ -131,7 +140,7 @@ export const AppShell = ({ onExitToDesign }: { onExitToDesign: () => void }) => 
           }}
         >
           <Toolbar
-            current={current}
+            current={displayRoute}
             stack={stack}
             mode={mode}
             night={night}
@@ -142,7 +151,7 @@ export const AppShell = ({ onExitToDesign }: { onExitToDesign: () => void }) => 
           />
 
           <div className="phone-frame" style={{ marginTop: 16, position: 'relative' }}>
-            <div className="phone sketch">{SCREENS[current]()}</div>
+            <div className="phone sketch">{SCREENS[displayRoute]()}</div>
           </div>
 
           <div className="app-hint">

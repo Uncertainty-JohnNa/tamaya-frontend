@@ -1,19 +1,47 @@
 import { useState } from 'react';
 import { StatusBar, TabBar } from '../components/primitives';
 import { useNav } from '../lib/router';
-import { useStore } from '../lib/store';
+import {
+  Period,
+  MOODS_ALL,
+  MOOD_LABEL,
+  MOOD_BAR,
+  WEEKDAY_KR,
+  entryForDay,
+  latestEntry,
+  moodByDay,
+  statsFor,
+  weekdayOf,
+  useStore,
+} from '../lib/store';
 
 // 14-17 · Calendar / Diary detail / Stats / Insights
 
 export const S14_Calendar = () => {
   const nav = useNav();
-  const { state } = useStore();
+  const { state, dispatch } = useStore();
   const [picker, setPicker] = useState<number | null>(null);
   const [localMoods, setLocalMoods] = useState<Record<number, string>>({});
+
+  const moods = moodByDay(state.diaries);
+  const openDay = (day: number) => {
+    if (entryForDay(state.diaries, day)) {
+      dispatch({ type: 'ui/select-day', day });
+      nav.go('diary-detail');
+    } else {
+      setPicker(day);
+    }
+  };
+  const moodCounts = MOODS_ALL.map((m) => ({
+    m,
+    label: MOOD_LABEL[m],
+    n: state.diaries.filter((d) => d.moods[0] === m).length,
+  })).filter((x) => x.n > 0);
+  const recent = latestEntry(state.diaries);
   return (
   <div className="phone-inner">
     <StatusBar mode="day" time="11:08 AM" />
-    <div style={{ padding: '46px 18px 88px' }}>
+    <div className="phone-scroll" style={{ padding: '46px 18px 88px' }}>
       <div className="h-title">달력</div>
       <div className="tiny">감정의 흐름을 한 눈에</div>
 
@@ -57,34 +85,13 @@ export const S14_Calendar = () => {
                   ·
                 </div>
               );
-            const moodMap: Record<number, string> = {
-              2: '😌',
-              3: '😊',
-              5: '😣',
-              7: '😊',
-              9: '😌',
-              10: '😢',
-              12: '😊',
-              13: '😌',
-              15: '😡',
-              16: '😣',
-              18: '😌',
-              19: '😊',
-              20: '😊',
-              21: '😌',
-              22: '😣',
-              23: '😊',
-              24: '😌',
-              25: '😣',
-              26: '😣',
-            };
-            // local in-session moods overlay on top of the default map
-            const mood = localMoods[day] ?? moodMap[day];
+            // 달력 셀 감정 = store 일기(moodByDay) + 이번 세션 picker 추가분
+            const mood = localMoods[day] ?? moods[day];
             const today = day === 27;
             return (
               <div
                 key={i}
-                onClick={() => (mood ? nav.go('diary-detail') : setPicker(day))}
+                onClick={() => openDay(day)}
                 style={{
                   aspectRatio: 1,
                   display: 'flex',
@@ -142,51 +149,48 @@ export const S14_Calendar = () => {
           justifyContent: 'center',
         }}
       >
-        {(
-          [
-            ['😌', '평온', 8],
-            ['😊', '기쁨', 6],
-            ['😣', '피곤', 4],
-            ['😢', '슬픔', 1],
-            ['😡', '짜증', 1],
-          ] as [string, string, number][]
-        ).map(([e, n, c], i) => (
+        {moodCounts.map((x, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span>{e}</span>
+            <span>{x.m}</span>
             <span className="tiny">
-              {n} ×{c}
+              {x.label} ×{x.n}
             </span>
           </div>
         ))}
       </div>
 
-      <div
-        className="hbox r-r"
-        onClick={() => nav.go('diary-detail')}
-        style={{ padding: 12, marginTop: 12, cursor: 'pointer' }}
-      >
+      {recent && (
         <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+          className="hbox r-r"
+          onClick={() => {
+            dispatch({ type: 'ui/select-day', day: recent.day });
+            nav.go('diary-detail');
           }}
+          style={{ padding: 12, marginTop: 12, cursor: 'pointer' }}
         >
-          <div>
-            <div className="h-section">5월 26일</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-              <span style={{ fontSize: 20 }}>😣</span>
-              <span style={{ fontFamily: 'Patrick Hand', fontWeight: 700 }}>
-                피곤 · 차분 · 뿌듯
-              </span>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <div>
+              <div className="h-section">5월 {recent.day}일</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                <span style={{ fontSize: 20 }}>{recent.moods[0]}</span>
+                <span style={{ fontFamily: 'Patrick Hand', fontWeight: 700 }}>
+                  {recent.moods.map((m) => MOOD_LABEL[m]).join(' · ')}
+                </span>
+              </div>
             </div>
+            <span style={{ fontFamily: 'Caveat', fontSize: 22 }}>›</span>
           </div>
-          <span style={{ fontFamily: 'Caveat', fontSize: 22 }}>›</span>
+          <div className="tiny" style={{ marginTop: 6 }}>
+            "{recent.body.replace(/^5월 \d+일\.\s*/, '').slice(0, 30)}..."
+          </div>
         </div>
-        <div className="tiny" style={{ marginTop: 6 }}>
-          "긴 회의로 피곤했고, 끝난 뒤에 숨 돌릴 5분이..."
-        </div>
-      </div>
+      )}
 
       <div className="tiny" style={{ marginTop: 8, textAlign: 'center', color: '#7a5634' }}>
         ※ 점선 동그라미 = 기록 없음 — 탭해서 빠르게 감정 추가
@@ -194,7 +198,7 @@ export const S14_Calendar = () => {
 
       {state.diaries.length > 0 && (
         <div className="tiny" style={{ marginTop: 4, textAlign: 'center', color: '#8c4a1f' }}>
-          이번 세션 저장된 일기 {state.diaries.length}건 (Lv.{state.level} · 🔥 {state.streak}일)
+          기록된 일기 {state.diaries.length}건 (Lv.{state.level} · 🔥 {state.streak}일)
         </div>
       )}
     </div>
@@ -269,17 +273,55 @@ export const S14_Calendar = () => {
       </div>
     )}
 
-    <TabBar active="cal" onHome={() => nav.go('home-night')} />
+    <TabBar active="cal" />
   </div>
   );
 };
 
 export const S15_DiaryDetail = () => {
   const nav = useNav();
+  const { state } = useStore();
+  const entry = entryForDay(state.diaries, state.selectedDay) ?? latestEntry(state.diaries);
+
+  if (!entry) {
+    return (
+      <div className="phone-inner">
+        <StatusBar mode="day" time="11:12 AM" />
+        <div className="phone-scroll" style={{ padding: '46px 18px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span
+              style={{ fontFamily: 'Caveat', fontSize: 22, cursor: 'pointer' }}
+              onClick={() => nav.back()}
+            >
+              ‹
+            </span>
+            <div className="h-section">달력</div>
+          </div>
+          <div className="hbox dashed" style={{ padding: 18, marginTop: 16, textAlign: 'center' }}>
+            <div className="body">아직 이 날의 기록이 없어요.</div>
+            <div className="tiny" style={{ marginTop: 6 }}>밤에 회고를 시작하면 일기가 생겨요.</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const weekday = WEEKDAY_KR[weekdayOf(entry.day)];
+  const checks: [string, boolean][] = [
+    ['🍚', !!entry.check.food],
+    ['💧', !!entry.check.water],
+    ['😴', !!entry.check.sleep],
+    ['🚶', !!entry.check.movement],
+    ['☼', !!entry.check.sun],
+  ];
+  // 감정 분포 비율 — moods 개수에 따라
+  const moodWeights =
+    entry.moods.length >= 3 ? [45, 30, 25] : entry.moods.length === 2 ? [60, 40] : [100];
+
   return (
   <div className="phone-inner">
     <StatusBar mode="day" time="11:12 AM" />
-    <div style={{ padding: '46px 18px 24px' }}>
+    <div className="phone-scroll" style={{ padding: '46px 18px 24px' }}>
       <div
         style={{
           display: 'flex',
@@ -294,7 +336,7 @@ export const S15_DiaryDetail = () => {
           >
             ‹
           </span>
-          <div className="h-section">달력 / 5월 26일</div>
+          <div className="h-section">달력 / 5월 {entry.day}일</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <span className="tiny">✎</span>
@@ -303,44 +345,31 @@ export const S15_DiaryDetail = () => {
       </div>
 
       <div className="h-display" style={{ marginTop: 8, fontSize: 32 }}>
-        화요일 — 긴 하루
+        {weekday}요일 · 5월 {entry.day}일
       </div>
 
       <div className="hbox r-l" style={{ padding: 12, marginTop: 14 }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span style={{ fontSize: 22 }}>😣</span>
+          <span style={{ fontSize: 22 }}>{entry.moods[0]}</span>
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: 'Patrick Hand', fontWeight: 700 }}>
-              피곤 · 차분 · 뿌듯
+              {entry.moods.map((m) => MOOD_LABEL[m]).join(' · ')}
             </div>
-            <div className="tiny">5턴 대화로 작성 · 22:31</div>
+            <div className="tiny">회고 대화로 작성</div>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
-          <div
-            style={{
-              flex: 45,
-              height: 8,
-              background: '#ead0a6',
-              border: '1.5px solid #3a2414',
-            }}
-          />
-          <div
-            style={{
-              flex: 30,
-              height: 8,
-              background: '#d8a777',
-              border: '1.5px solid #3a2414',
-            }}
-          />
-          <div
-            style={{
-              flex: 25,
-              height: 8,
-              background: '#fff',
-              border: '1.5px solid #3a2414',
-            }}
-          />
+          {entry.moods.slice(0, 3).map((m, i) => (
+            <div
+              key={i}
+              style={{
+                flex: moodWeights[i],
+                height: 8,
+                background: MOOD_BAR[m],
+                border: '1.5px solid #3a2414',
+              }}
+            />
+          ))}
         </div>
       </div>
 
@@ -348,15 +377,8 @@ export const S15_DiaryDetail = () => {
         className="hbox r-r"
         style={{ padding: 16, marginTop: 12, background: '#fff5e1' }}
       >
-        <div className="handwriting" style={{ fontSize: 18, lineHeight: 1.6 }}>
-          5월 26일. 점심으로 우동 한 그릇이 위로였다.
-          <br />
-          긴 회의로 피곤했고, 끝난 뒤에 숨 돌릴 5분이
-          <br />
-          없었던 게 가장 무거웠다.
-          <br />
-          <br />
-          내일은 일정 사이에 3분의 틈을 만들어보기로 했다.
+        <div className="handwriting" style={{ fontSize: 18, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+          {entry.body}
         </div>
       </div>
 
@@ -364,7 +386,7 @@ export const S15_DiaryDetail = () => {
         키워드
       </div>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        {['긴 회의', '우동', '피곤', '5분이 없음', '3분 호흡'].map((t, i) => (
+        {entry.keywords.map((t, i) => (
           <span key={i} className="chip dashed">
             #{t}
           </span>
@@ -381,15 +403,7 @@ export const S15_DiaryDetail = () => {
             marginTop: 8,
           }}
         >
-          {(
-            [
-              ['🍚', true],
-              ['💧', true],
-              ['😴', false],
-              ['🚶', false],
-              ['☼', true],
-            ] as [string, boolean][]
-          ).map(([ic, on], i) => (
+          {checks.map(([ic, on], i) => (
             <div key={i} style={{ textAlign: 'center' }}>
               <div
                 className="ph-square"
@@ -408,56 +422,83 @@ export const S15_DiaryDetail = () => {
         </div>
       </div>
 
-      <div
-        className="hbox dashed"
-        style={{
-          padding: 10,
-          marginTop: 10,
-          display: 'flex',
-          gap: 8,
-          alignItems: 'center',
-        }}
-      >
-        <div className="check on">✓</div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: 'Patrick Hand', fontWeight: 700 }}>
-            내일 한 가지 — 3분 호흡
+      {entry.tomorrow && (
+        <div
+          className="hbox dashed"
+          style={{
+            padding: 10,
+            marginTop: 10,
+            display: 'flex',
+            gap: 8,
+            alignItems: 'center',
+          }}
+        >
+          <div className="check on">✓</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: 'Patrick Hand', fontWeight: 700 }}>
+              내일 한 가지 — {entry.tomorrow}
+            </div>
+            <div className="tiny">5월 {entry.day + 1}일에 알람으로 추가됨</div>
           </div>
-          <div className="tiny">5월 27일에 알람으로 추가됨</div>
         </div>
-      </div>
+      )}
     </div>
   </div>
   );
 };
 
 export const S16_Stats = () => {
-  const nav = useNav();
+  const [period, setPeriod] = useState<Period>('주');
+  const { state } = useStore();
+  const s = statsFor(state.diaries, period);
+  const maxW = Math.max(...s.weekday, 1);
+  const pct = period === '전체' ? 100 : Math.round((s.writeDays / s.target) * 100);
+  const life: [string, string, string][] = [
+    ['🍚 식사', `${s.life.food}/${s.writeDays}`, s.life.food >= s.writeDays * 0.7 ? '꾸준 ↑' : '보통'],
+    ['😴 수면', `${s.life.sleep}/${s.writeDays}`, s.life.sleep >= s.writeDays * 0.6 ? '양호' : '부족 ↓'],
+    ['🚶 운동', `${s.life.movement}/${s.writeDays}`, s.life.movement >= s.writeDays * 0.5 ? '활발' : '보통'],
+  ];
   return (
   <div className="phone-inner">
     <StatusBar mode="day" time="11:18 AM" />
-    <div style={{ padding: '46px 18px 88px' }}>
+    <div className="phone-scroll" style={{ padding: '46px 18px 88px' }}>
       <div className="h-title">통계</div>
       <div className="tiny">기록의 모양을 봐요</div>
 
       <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
-        <span className="chip solid">주</span>
-        <span className="chip">월</span>
-        <span className="chip">전체</span>
+        {(['주', '월', '전체'] as const).map((p) => (
+          <button
+            key={p}
+            type="button"
+            onClick={() => setPeriod(p)}
+            className={'chip chip-btn ' + (period === p ? 'solid' : '')}
+            style={{ cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            {p}
+          </button>
+        ))}
       </div>
 
       <div className="hbox r-l" style={{ padding: 14, marginTop: 12 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
           <div className="h-display" style={{ fontSize: 56 }}>
-            5
+            {s.writeDays}
           </div>
           <div>
-            <div style={{ fontFamily: 'Patrick Hand', fontWeight: 700 }}>/ 7 일</div>
-            <div className="tiny squiggle">D30 목표 60% 진행중</div>
+            <div style={{ fontFamily: 'Patrick Hand', fontWeight: 700 }}>
+              {period === '전체' ? '일 누적' : `/ ${s.target} 일`}
+            </div>
+            <div className="tiny squiggle">
+              {period === '주'
+                ? `이번 주 ${pct}% 작성`
+                : period === '월'
+                  ? `5월 ${pct}% 작성`
+                  : `누적 기록 ${s.count}건`}
+            </div>
           </div>
         </div>
         <div className="bar" style={{ marginTop: 10 }}>
-          <i style={{ width: '71%' }} />
+          <i style={{ width: Math.min(100, pct) + '%' }} />
         </div>
       </div>
 
@@ -472,39 +513,32 @@ export const S16_Stats = () => {
             marginTop: 10,
           }}
         >
-          {(
-            [
-              ['일', 20],
-              ['월', 60],
-              ['화', 80],
-              ['수', 40],
-              ['목', 70],
-              ['금', 55],
-              ['토', 0],
-            ] as [string, number][]
-          ).map(([d, h], i) => (
-            <div
-              key={i}
-              style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 4,
-              }}
-            >
+          {WEEKDAY_KR.map((d, i) => {
+            const h = Math.round((s.weekday[i] / maxW) * 100);
+            return (
               <div
+                key={i}
                 style={{
-                  height: h,
-                  width: 22,
-                  background: h > 0 ? '#8c4a1f' : '#f5e6cf',
-                  border: '1.5px solid #3a2414',
-                  borderRadius: 4,
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 4,
                 }}
-              />
-              <span className="tiny">{d}</span>
-            </div>
-          ))}
+              >
+                <div
+                  style={{
+                    height: Math.max(h, s.weekday[i] > 0 ? 6 : 0),
+                    width: 22,
+                    background: s.weekday[i] > 0 ? '#8c4a1f' : '#f5e6cf',
+                    border: '1.5px solid #3a2414',
+                    borderRadius: 4,
+                  }}
+                />
+                <span className="tiny">{d}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -513,22 +547,16 @@ export const S16_Stats = () => {
         <div
           style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}
         >
-          {(
-            [
-              ['😌 평온', 45, '#ead0a6'],
-              ['😊 기쁨', 25, '#c9a266'],
-              ['😣 피곤', 20, '#d8a777'],
-              ['😢 슬픔', 7, '#fff'],
-              ['😡 짜증', 3, '#fff5e1'],
-            ] as [string, number, string][]
-          ).map(([n, p, c], i) => (
+          {s.moodPct.map((x, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontFamily: 'Patrick Hand', fontSize: 13, width: 64 }}>{n}</span>
+              <span style={{ fontFamily: 'Patrick Hand', fontSize: 13, width: 64 }}>
+                {x.mood} {x.label}
+              </span>
               <div className="bar" style={{ flex: 1 }}>
-                <i style={{ width: p + '%', background: c }} />
+                <i style={{ width: x.pct + '%', background: x.color }} />
               </div>
               <span className="tiny" style={{ width: 30, textAlign: 'right' }}>
-                {p}%
+                {x.pct}%
               </span>
             </div>
           ))}
@@ -545,13 +573,7 @@ export const S16_Stats = () => {
             marginTop: 8,
           }}
         >
-          {(
-            [
-              ['🍚 식사', '17/21', '정시 ↑'],
-              ['😴 수면', '6.4h', '부족 ↓'],
-              ['🚶 운동', '3/7', '보통'],
-            ] as [string, string, string][]
-          ).map(([t, v, s], i) => (
+          {life.map(([t, v, sub], i) => (
             <div
               key={i}
               className="hbox dashed"
@@ -568,23 +590,24 @@ export const S16_Stats = () => {
               >
                 {v}
               </div>
-              <div className="tiny">{s}</div>
+              <div className="tiny">{sub}</div>
             </div>
           ))}
         </div>
       </div>
     </div>
-    <TabBar active="stat" onHome={() => nav.go('home-night')} />
+    <TabBar active="stat" />
   </div>
   );
 };
 
 export const S17_Insights = () => {
   const nav = useNav();
+  const [routine, setRoutine] = useState<null | 'added' | 'later'>(null);
   return (
   <div className="phone-inner">
     <StatusBar mode="day" time="11:22 AM" />
-    <div style={{ padding: '46px 18px 88px' }}>
+    <div className="phone-scroll" style={{ padding: '46px 18px 88px' }}>
       <div className="h-title">인사이트</div>
       <div className="tiny">이음이가 정리해준 이번 주</div>
 
@@ -651,19 +674,63 @@ export const S17_Insights = () => {
         <div className="tiny" style={{ marginTop: 4 }}>
           패턴 기반 추천 · 알람으로 추가하기
         </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-          <span className="chip" style={{ background: '#f5e6cf' }}>
-            나중에
-          </span>
-          <span className="chip ink">✓ 추가</span>
+        {routine === 'added' ? (
+          <div className="tiny" style={{ marginTop: 10, fontWeight: 700 }}>
+            ✓ 회의 종료 후 3분 호흡 알람이 추가됐어요
+          </div>
+        ) : routine === 'later' ? (
+          <div className="tiny" style={{ marginTop: 10 }}>
+            다음에 다시 추천할게요
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+            <button
+              type="button"
+              onClick={() => setRoutine('later')}
+              className="chip chip-btn"
+              style={{ background: '#f5e6cf', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              나중에
+            </button>
+            <button
+              type="button"
+              onClick={() => setRoutine('added')}
+              className="chip chip-btn ink"
+              style={{ cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              ✓ 추가
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div
+        className="hbox r-r"
+        onClick={() => nav.go('report')}
+        style={{
+          padding: 12,
+          marginTop: 12,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          cursor: 'pointer',
+        }}
+      >
+        <div className="ph-circle" style={{ width: 36, height: 36, flex: 'none' }}>
+          ◇
         </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: 'Patrick Hand', fontWeight: 700 }}>이번 주 리포트 보기</div>
+          <div className="tiny">매주 월요일 발행 · 한 주 요약 카드</div>
+        </div>
+        <span style={{ fontFamily: 'Caveat', fontSize: 22 }}>›</span>
       </div>
 
       <div className="sticky" style={{ marginTop: 14, transform: 'rotate(-1.5deg)' }}>
         ※ D7+에 더 깊은 패턴 — 꾸준히 모일수록 정확해져요
       </div>
     </div>
-    <TabBar active="ins" onHome={() => nav.go('home-night')} />
+    <TabBar active="ins" />
   </div>
   );
 };

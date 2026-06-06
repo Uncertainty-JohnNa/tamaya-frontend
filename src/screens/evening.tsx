@@ -4,6 +4,7 @@ import { useNav } from '../lib/router';
 import {
   CHAT_DIARY_INTRO,
   CHAT_DIARY_TURNS,
+  TODAY_DAY,
   useStore,
 } from '../lib/store';
 
@@ -34,7 +35,7 @@ export const S10_RecapStart = () => {
         <circle key={i} cx={x} cy={y} r="1.4" fill="#f5e6cf" />
       ))}
     </svg>
-    <div style={{ padding: '60px 24px 24px', position: 'relative' }}>
+    <div className="phone-scroll" style={{ padding: '60px 24px 100px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <span
           style={{ fontFamily: 'Caveat', fontSize: 22, color: '#d8a777', cursor: 'pointer' }}
@@ -168,9 +169,13 @@ export const S11_ChatDiary = () => {
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const seeded = useRef(false);
 
   // Seed first bot message + first question on mount if empty.
+  // ref guard: StrictMode(dev)의 이중 effect 발화로 인한 인삿말·질문 중복 방지.
   useEffect(() => {
+    if (seeded.current) return;
+    seeded.current = true;
     if (state.chatDiary.length === 0) {
       dispatch({ type: 'chat-diary/append', msg: CHAT_DIARY_INTRO });
       setTimeout(() => {
@@ -353,11 +358,15 @@ export const S11_ChatDiary = () => {
 export const S12_MoodFinalize = () => {
   const nav = useNav();
   const { state, dispatch } = useStore();
+  const [toast, setToast] = useState<string | null>(null);
+  const flash = (m: string) => {
+    setToast(m);
+    setTimeout(() => setToast(null), 1400);
+  };
 
   // Pull recent user answers from chat-diary to build a fresh diary preview.
   const userAnswers = state.chatDiary.filter((m) => m.role === 'user').map((m) => m.text);
-  const today = new Date();
-  const datePrefix = `${today.getMonth() + 1}월 ${today.getDate()}일`;
+  const datePrefix = `5월 ${TODAY_DAY}일`;
   const bodyPreview =
     userAnswers.length > 0
       ? `${datePrefix}. ${userAnswers
@@ -372,7 +381,7 @@ export const S12_MoodFinalize = () => {
     dispatch({
       type: 'diary/save',
       entry: {
-        day: today.getDate(),
+        day: TODAY_DAY,
         moods: ['😣', '😌', '😊'],
         keywords: userAnswers[0] ? [userAnswers[0].slice(0, 8)] : ['긴 회의', '우동'],
         body: bodyPreview,
@@ -477,7 +486,14 @@ export const S12_MoodFinalize = () => {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <div className="h-section">생성된 일기</div>
-          <span className="tiny">✎ 수정</span>
+          <button
+            type="button"
+            onClick={() => flash('✎ 일기 직접 수정은 곧 지원돼요')}
+            className="tiny"
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: '#7a5634' }}
+          >
+            ✎ 수정
+          </button>
         </div>
         <div
           className="handwriting"
@@ -495,13 +511,26 @@ export const S12_MoodFinalize = () => {
           {tomorrowLine}
         </div>
         <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-          <span className="chip accent">설정</span>
-          <span className="chip" style={{ background: '#f5e6cf' }}>
+          <button
+            type="button"
+            onClick={() => flash('⏰ 내일 알람으로 추가했어요')}
+            className="chip chip-btn accent"
+            style={{ cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            설정
+          </button>
+          <button
+            type="button"
+            onClick={() => flash('다음에 알려줄게요')}
+            className="chip chip-btn"
+            style={{ background: '#f5e6cf', cursor: 'pointer', fontFamily: 'inherit' }}
+          >
             나중에
-          </span>
+          </button>
         </div>
       </div>
     </div>
+    {toast && <div className="toast">{toast}</div>}
     <div
       style={{
         position: 'absolute',
@@ -540,7 +569,7 @@ export const S13_Reward = () => {
   const nav = useNav();
   const { state } = useStore();
   return (
-  <div className="phone-inner" style={{ position: 'relative' }}>
+  <div className="phone-inner">
     <div
       style={{ position: 'absolute', inset: 0, background: 'rgba(26,26,26,0.55)' }}
     />
@@ -550,11 +579,12 @@ export const S13_Reward = () => {
     </div>
 
     <div
+      className="phone-scroll"
+      style={{ display: 'flex', flexDirection: 'column', padding: 24 }}
+    >
+    <div
       style={{
-        position: 'absolute',
-        left: 24,
-        right: 24,
-        top: 130,
+        margin: 'auto 0',
         padding: 24,
         background: '#f5e6cf',
         border: '2px solid #3a2414',
@@ -641,6 +671,7 @@ export const S13_Reward = () => {
           먹이주기 →
         </button>
       </div>
+    </div>
     </div>
   </div>
   );

@@ -38,7 +38,7 @@ import { NavContext } from './lib/router';
 // reference useNav() but the canvas is non-interactive, so clicks are no-ops.
 const DesignNavStub = ({ children }: { children: ReactNode }) => (
   <NavContext.Provider
-    value={{ go: () => undefined, back: () => undefined, reset: () => undefined, current: 'splash' }}
+    value={{ go: () => undefined, back: () => undefined, reset: () => undefined, current: 'splash', night: true }}
   >
     {children}
   </NavContext.Provider>

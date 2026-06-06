@@ -25,7 +25,7 @@ export const S22_Settings = () => {
   return (
     <div className="phone-inner">
       <StatusBar mode="day" time="11:42 AM" />
-      <div style={{ padding: '46px 18px 88px' }}>
+      <div className="phone-scroll" style={{ padding: '46px 18px 88px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span
             style={{ fontFamily: 'Caveat', fontSize: 22, cursor: 'pointer' }}
@@ -75,7 +75,7 @@ export const S22_Settings = () => {
           type="button"
           onClick={() => {
             if (confirm('모든 로컬 데이터를 초기화할까요?')) {
-              localStorage.removeItem('tamaya-state-v1');
+              localStorage.removeItem('tamaya-state-v2');
               location.reload();
             }
           }}
@@ -102,7 +102,7 @@ export const S22_Settings = () => {
           </span>
         </div>
       </div>
-      <TabBar active="home" onHome={() => nav.go('home-night')} />
+      <TabBar active="home" />
     </div>
   );
 };
